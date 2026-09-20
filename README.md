@@ -57,8 +57,13 @@ The app uses Haversine (great-circle) distance. This is an excellent fast planni
 
 See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) before publishing. In particular, commit `sample_data.csv`; without it, Streamlit Cloud cannot open the Bengaluru demo scenario.
 
-## Before submission
+## Credits & Data Sources
 
-- Add your team members' names and repository link.
-- Record a 2-3 minute demo video.
-- Confirm the event rules about code written during the official hackathon window, library disclosure, and AI-assistant disclosure.
+- **Pratik Singh** — Project lead: concept development, application integration, optimization workflow, deployment, documentation, and final presentation.
+- **Bicky Jaiswal** — Development and research support: testing scenarios, reviewing outputs, and assisting with implementation and presentation preparation.
+- **Sachin Sah** — Research and validation support: domain research, feedback, documentation, presentation creation and final review.
+- **Sameer Ray** — Team contributor: ideation, project feedback, and final review.
+  
+### Data source
+
+The Bengaluru demo dataset used in this prototype is included in `sample_data.csv` in this repository. It contains representative Bengaluru neighbourhood names, approximate latitude and longitude coordinates, and illustrative daily-order volumes created for scenario planning and demonstration purposes. The data is not presented as live operational data; a production deployment would use verified order history, road-network travel times, traffic conditions, property availability, and facility-cost data from relevant business and public sources.
