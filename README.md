@@ -12,6 +12,11 @@ GRIDPOINT helps an e-commerce company decide where to locate one or more warehou
 - Delivery-cost versus daily facility-cost trade-off
 - CSV export of the recommended assignments
 
+## Link to Access the Website
+
+- https://gridpoint-bmsce.streamlit.app/
+  
+
 ## Run locally
 
 ```bash
@@ -52,8 +57,4 @@ The app uses Haversine (great-circle) distance. This is an excellent fast planni
 - The mathematical approach is a weighted k-median clustering method using demand-weighted k-means++ initialization and Weiszfeld updates for geometric medians.
 - An AI coding assistant was used to help draft and explain code. The team is responsible for understanding, testing, integrating, and presenting the work.
 
-## Before submission
 
-- Add your team members' names and repository link.
-- Record a 2-3 minute demo video.
-- Confirm the event rules about code written during the official hackathon window, library disclosure, and AI-assistant disclosure.
