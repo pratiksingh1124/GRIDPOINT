@@ -12,16 +12,11 @@ GRIDPOINT helps an e-commerce company decide where to locate one or more warehou
 - Delivery-cost versus daily facility-cost trade-off
 - CSV export of the recommended assignments
 
-## Link to Access the Website
-
-- https://gridpoint-bmsce.streamlit.app/
-  
-
 ## Run locally
 
 ```bash
 python -m pip install -r requirements.txt
-streamlit run app.py
+streamlit run GRIDPOINT.py
 ```
 
 ## Input data format
@@ -49,7 +44,8 @@ The app uses Haversine (great-circle) distance. This is an excellent fast planni
 2. Set three warehouses and select **Find best locations**.
 3. Compare the maps and daily cost figures.
 4. Enable a tight service radius or capacity to demonstrate real-world constraints and the coverage warning.
-5. Open the trade-off tab and explain why the cheapest delivery plan may not be the cheapest total operating plan.
+5. Open **Operations pulse** to identify capacity, coverage, and delivery-risk checks before a real site decision.
+6. Open the trade-off tab and explain why the cheapest delivery plan may not be the cheapest total operating plan.
 
 ## Technology and AI disclosure
 
@@ -57,4 +53,12 @@ The app uses Haversine (great-circle) distance. This is an excellent fast planni
 - The mathematical approach is a weighted k-median clustering method using demand-weighted k-means++ initialization and Weiszfeld updates for geometric medians.
 - An AI coding assistant was used to help draft and explain code. The team is responsible for understanding, testing, integrating, and presenting the work.
 
+## Deployment
 
+See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) before publishing. In particular, commit `sample_data.csv`; without it, Streamlit Cloud cannot open the Bengaluru demo scenario.
+
+## Before submission
+
+- Add your team members' names and repository link.
+- Record a 2-3 minute demo video.
+- Confirm the event rules about code written during the official hackathon window, library disclosure, and AI-assistant disclosure.
