@@ -12,6 +12,7 @@ import pandas as pd
 import pydeck as pdk
 import streamlit as st
 
+from briefing import decision_brief_markdown, operation_pulse
 from optimizer import (
     assign_nearest,
     assign_with_limits,
@@ -34,13 +35,17 @@ st.set_page_config(page_title="GRIDPOINT | Warehouse Planner", page_icon="📦",
 st.markdown(
     """
     <style>
-      .block-container { max-width: 1500px; padding-top: 2.2rem; padding-bottom: 3rem; }
+      .block-container { max-width: 1500px; padding-top: 1.5rem; padding-bottom: 3rem; }
       [data-testid="stMetricValue"] { font-size: 1.65rem; }
-      .hero { padding: 1.5rem 1.7rem; border-radius: 18px; color: white;
-              background: linear-gradient(125deg, #102a43 0%, #176b87 55%, #12a594 100%); }
-      .hero h1 { margin: 0; font-size: 2.4rem; }
+      [data-testid="stSidebar"] { border-right: 1px solid rgba(148, 163, 184, .18); }
+      [data-testid="stDataFrame"] { border: 1px solid rgba(148, 163, 184, .18); border-radius: 12px; overflow: hidden; }
+      .eyebrow { color: #67e8f9; font-size: .74rem; font-weight: 700; letter-spacing: .12em; margin-bottom: .4rem; }
+      .hero { padding: 1.7rem 1.9rem; border-radius: 20px; color: white;
+              background: radial-gradient(circle at 90% 10%, rgba(103,232,249,.32), transparent 30%), linear-gradient(125deg, #102a43 0%, #176b87 55%, #12a594 100%); }
+      .hero h1 { margin: 0; font-size: 2.45rem; letter-spacing: -.03em; }
       .hero p { margin: .5rem 0 0; font-size: 1.05rem; opacity: .92; }
-      .caption-card { border-left: 4px solid #12a594; padding: .5rem 1rem; background: #f0fdfa; border-radius: 4px; }
+      .caption-card { border-left: 4px solid #25c7b7; padding: .7rem 1rem; background: rgba(37, 199, 183, .11); border-radius: 8px; }
+      .decision-card { border: 1px solid rgba(103, 232, 249, .25); padding: 1rem 1.1rem; border-radius: 12px; background: rgba(15, 118, 110, .12); }
     </style>
     """,
     unsafe_allow_html=True,
@@ -121,10 +126,10 @@ def warehouse_summary(data: pd.DataFrame, warehouses: np.ndarray, assignment: np
 
 
 st.markdown(
-    """<div class="hero"><h1>📦 GRIDPOINT</h1><p>Turn neighbourhood demand into smarter warehouse locations.</p></div>""",
+    """<div class="eyebrow">NETWORK LOCATION INTELLIGENCE</div><div class="hero"><h1>📦 GRIDPOINT</h1><p>Turn neighbourhood demand into a decision-ready warehouse network.</p></div>""",
     unsafe_allow_html=True,
 )
-st.caption("An educational planning prototype. Distances are straight-line estimates; final business decisions need road, traffic, rent, and service data.")
+st.caption("Scenario-planning tool: distances are straight-line estimates. Confirm routes, traffic, property feasibility, staffing, and service data before selecting a site.")
 
 with st.sidebar:
     st.header("1. Demand data")
@@ -167,23 +172,31 @@ with st.sidebar:
     capacity = st.number_input("Orders per warehouse per day", min_value=100, max_value=100000, value=1500, step=100) if enforce_capacity else None
     enforce_radius = st.checkbox("Limit delivery radius")
     service_radius = st.number_input("Maximum delivery radius (km)", min_value=1.0, max_value=200.0, value=15.0, step=1.0) if enforce_radius else None
-    run = st.button("Find best locations", type="primary", use_container_width=True)
+    if st.button("Find best locations", type="primary", use_container_width=True):
+        st.session_state["show_recommendation"] = True
 
-tab_overview, tab_solution, tab_tradeoff, tab_explain = st.tabs(["🗺️ Demand overview", "✨ Recommended network", "⚖️ Warehouse trade-off", "🧠 Explain it simply"])
+show_recommendation = st.session_state.get("show_recommendation", False)
+
+tab_overview, tab_solution, tab_tradeoff, tab_operations = st.tabs(["🗺️ Demand intelligence", "✨ Recommended network", "⚖️ Network economics", "🚦 Operations pulse"])
+scenario = None
 
 with tab_overview:
-    st.subheader("Where is demand today?")
+    st.subheader("Where is demand concentrated?")
+    st.caption("Start here to see the volume centres that should shape a resilient network.")
     st.map(data.rename(columns={"lat": "latitude", "lon": "longitude"}), latitude="latitude", longitude="longitude", size="orders", color="#12a594")
-    left, middle, right = st.columns(3)
+    left, middle, right, far_right = st.columns(4)
     left.metric("Neighbourhoods", len(data))
     middle.metric("Daily orders", f"{int(orders.sum()):,}")
     right.metric("Highest-demand area", data.loc[data["orders"].idxmax(), "name"])
+    top_count = min(3, len(data))
+    top_three_share = 100 * data.nlargest(top_count, "orders")["orders"].sum() / orders.sum()
+    far_right.metric(f"Top {top_count} demand share", f"{top_three_share:.0f}%")
     st.dataframe(data.sort_values("orders", ascending=False), use_container_width=True, hide_index=True)
 
 with tab_solution:
-    if not run:
+    if not show_recommendation:
         st.info("Set your assumptions in the sidebar, then select **Find best locations**.")
-        st.markdown("<div class='caption-card'>Tip: Start with the demo data, choose three warehouses, and use the preset comparison sites. That gives you a presentation-ready first scenario in seconds.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='caption-card'>Start with the Bengaluru demo, choose three warehouses, and use the preset comparison sites. You will get a decision-ready first scenario in seconds.</div>", unsafe_allow_html=True)
     elif len(existing_names) != warehouse_count:
         st.warning(f"Choose exactly {warehouse_count} current warehouse site(s) to make a fair comparison.")
     else:
@@ -230,9 +243,16 @@ with tab_solution:
         st.markdown("#### Neighbourhood assignment")
         st.dataframe(assignment_table, use_container_width=True, hide_index=True)
         st.download_button("Download recommended assignments", assignment_table.to_csv(index=False).encode("utf-8"), "gridpoint_assignments.csv", "text/csv")
+        scenario = {
+            "current_result": current_result,
+            "optimized_result": optimized_result,
+            "optimized_warehouses": optimized_warehouses,
+            "optimized_assignment": optimized_assignment,
+        }
 
 with tab_tradeoff:
-    st.subheader("What is the right number of warehouses?")
+    st.subheader("What is the right network size?")
+    st.caption("Compare daily delivery savings with the operating cost of opening and running each facility.")
     daily_facility_cost = st.number_input("Daily operating cost per warehouse (₹)", min_value=0.0, value=20_000.0, step=1_000.0, help="Use a daily estimate (rent, staffing, utilities), so it can be compared fairly against daily delivery cost.")
     curve = tradeoff_curve(points, orders, min(8, len(data)), cost_rate, daily_facility_cost)
     best_row = curve.loc[curve["total_daily_cost"].idxmin()]
@@ -240,18 +260,52 @@ with tab_tradeoff:
     st.line_chart(curve.set_index("warehouses")[["delivery_cost", "facility_cost", "total_daily_cost"]], color=["#ef4444", "#f59e0b", "#0f766e"])
     st.dataframe(curve.round(0), use_container_width=True, hide_index=True)
 
-with tab_explain:
-    st.subheader("How to explain GRIDPOINT to a judge")
-    st.markdown(
-        """
-        **The problem:** Delivering from a warehouse far away is more expensive, and a high-order neighbourhood matters more than a low-order one.
+with tab_operations:
+    st.subheader("Operational decision brief")
+    st.caption("Translate the location recommendation into the validation work needed before an operations team commits to a site.")
+    if scenario is None:
+        st.info("Build a recommended network first. This tab will then surface service risks, workload balance, and next actions for the same scenario.")
+    else:
+        current_result = scenario["current_result"]
+        optimized_result = scenario["optimized_result"]
+        optimized_warehouses = scenario["optimized_warehouses"]
+        optimized_assignment = scenario["optimized_assignment"]
+        pulse, zone_summary, actions = operation_pulse(
+            data,
+            optimized_warehouses,
+            optimized_assignment,
+            optimized_result,
+            capacity,
+            service_radius,
+        )
+        highest_utilisation = pulse["max_utilisation"]
+        capacity_signal = f"{float(highest_utilisation):.0f}%" if highest_utilisation is not None else "Not set"
+        metric_1, metric_2, metric_3, metric_4 = st.columns(4)
+        metric_1.metric("Demand in top 3 areas", f"{float(pulse['top_three_share']):.0f}%")
+        metric_2.metric("Farthest served delivery", f"{float(pulse['farthest_distance']):.1f} km")
+        metric_3.metric("Highest capacity use", capacity_signal)
+        metric_4.metric("Unserved orders / day", f"{int(pulse['unserved_orders']):,}")
 
-        **Our idea:** GRIDPOINT repeatedly groups each neighbourhood with its nearest warehouse, then moves that warehouse toward the centre of the demand it serves. High-order areas pull the location more strongly. It tests several starting layouts and keeps the lowest-cost result.
+        workload, priorities = st.columns([1.25, 1])
+        with workload:
+            st.markdown("#### Service-zone workload")
+            st.dataframe(zone_summary, use_container_width=True, hide_index=True)
+        with priorities:
+            st.markdown("#### Action priorities")
+            for position, action in enumerate(actions, start=1):
+                st.markdown(f"**{position}.** {action}")
 
-        **The result:** Teams can compare their current network with a demand-aware layout, see every assignment on a map, and test whether capacity, radius, and facility costs change the recommendation.
-
-        **Honest limitation:** We use straight-line geographical distance as a fast planning estimate. A real rollout would add road routes, traffic, delivery time, property cost, and customer service data.
-        """
-    )
-    st.markdown("#### 45-second demo order")
-    st.markdown("1. Show the demand map and point out the largest order bubbles.\n2. Choose three warehouses and press **Find best locations**.\n3. Compare the before/after maps and savings metric.\n4. Turn on a tight capacity or radius limit to show the real-world constraint warning.\n5. Open the trade-off tab and explain the delivery-cost vs facility-cost decision.")
+        decision_brief = decision_brief_markdown(
+            warehouse_count,
+            current_result,
+            optimized_result,
+            pulse,
+            actions,
+        )
+        st.download_button(
+            "Download decision brief",
+            decision_brief.encode("utf-8"),
+            "gridpoint_decision_brief.md",
+            "text/markdown",
+            help="Share a concise summary of this scenario with a mentor, judge, or operations stakeholder.",
+        )
