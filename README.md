@@ -53,10 +53,6 @@ The app uses Haversine (great-circle) distance. This is an excellent fast planni
 - The mathematical approach is a weighted k-median clustering method using demand-weighted k-means++ initialization and Weiszfeld updates for geometric medians.
 - An AI coding assistant was used to help draft and explain code. The team is responsible for understanding, testing, integrating, and presenting the work.
 
-## Deployment
-
-See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) before publishing. In particular, commit `sample_data.csv`; without it, Streamlit Cloud cannot open the Bengaluru demo scenario.
-
 ## Credits & Data Sources
 
 - **Pratik Singh** — Project lead: concept development, application integration, optimization workflow, deployment, documentation, and final presentation.
