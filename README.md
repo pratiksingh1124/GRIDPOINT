@@ -1,25 +1,73 @@
-# GRIDPOINT - Warehouse Location Optimization Platform
+# GRIDPOINT
 
-GRIDPOINT helps an e-commerce company decide where to locate one or more warehouses. It maps demand, recommends locations that reduce order-weighted delivery distance, assigns neighbourhoods to warehouses, and compares the recommended plan with the current network.
+> A decision-support application for planning warehouse locations from neighbourhood-level demand.
 
-## What it demonstrates
+GRIDPOINT helps operations teams explore where to place one or more warehouses, understand delivery-distance trade-offs, and compare a proposed network with an existing one. It combines an interactive Streamlit interface with demand-weighted location optimization to turn a simple CSV of demand points into a decision-ready planning scenario.
 
-- Upload or edit neighbourhood data: `name`, `lat`, `lon`, `orders`
-- Interactive map of demand, warehouse locations, and allocation lines
-- Weighted k-median optimization: busy neighbourhoods influence the recommendation more
-- Current-vs-recommended delivery-cost comparison
-- Optional warehouse capacity and maximum service-radius rules
-- Delivery-cost versus daily facility-cost trade-off
-- CSV export of the recommended assignments
+> **Planning note:** GRIDPOINT is a prototype for scenario analysis. Its distance estimates are straight-line (great-circle) distances, not road-network travel times. Validate final site decisions with routing, traffic, property, capacity, labour, and operating-cost data.
 
-## Run locally
+## What it does
+
+- Maps demand centres, warehouse locations, and warehouse-to-neighbourhood allocations
+- Recommends warehouse locations that minimize demand-weighted delivery distance
+- Compares an existing network against a recommended network
+- Estimates delivery-cost and facility-cost trade-offs
+- Applies optional daily-capacity and maximum-service-radius rules
+- Highlights coverage gaps and operational risk indicators
+- Supports editing in-app data or uploading a CSV
+- Exports recommended neighbourhood assignments for further analysis
+
+## How it works
+
+GRIDPOINT uses a demand-weighted **k-median** approach:
+
+1. It creates multiple well-distributed starting warehouse configurations using demand-weighted k-means++ initialization.
+2. Each neighbourhood is assigned to its nearest warehouse.
+3. Warehouse positions are refined toward the weighted geometric median of their assigned demand using Weiszfeld updates.
+4. The best result across several optimization runs is retained.
+
+Distances are calculated with the Haversine formula. The optimizer works in a local kilometre projection for stable location updates, then evaluates the final plan using great-circle distances.
+
+## Quick start
+
+### Prerequisites
+
+- Python 3.10 or later
+- pip
+
+### Install and run
 
 ```bash
+git clone https://github.com/pratiksingh1124/GRIDPOINT.git
+cd GRIDPOINT
 python -m pip install -r requirements.txt
 streamlit run GRIDPOINT.py
 ```
 
-## Input data format
+Streamlit will display a local URL in the terminal. Open it in a browser to begin exploring scenarios.
+
+## Using the app
+
+1. Start with the included Bengaluru demo data or upload a CSV.
+2. Review or edit demand data in the in-app table.
+3. Choose the number of warehouses and enter a delivery cost per kilometre per order.
+4. Optionally select current warehouse sites to establish a comparison baseline.
+5. Add capacity or service-radius constraints if needed.
+6. Select **Find best locations** and review the recommended network, economics, and operations views.
+7. Export assignments for reporting or downstream analysis.
+
+## Input data
+
+Upload a CSV with the following required columns:
+
+| Column | Description | Example |
+| --- | --- | --- |
+| `name` | Unique demand-centre or neighbourhood name | `Koramangala` |
+| `lat` | Latitude in decimal degrees | `12.9352` |
+| `lon` | Longitude in decimal degrees | `77.6245` |
+| `orders` | Positive daily order volume | `320` |
+
+Example:
 
 ```csv
 name,lat,lon,orders
@@ -27,39 +75,45 @@ Koramangala,12.9352,77.6245,320
 Indiranagar,12.9784,77.6408,280
 ```
 
-`orders` must be a positive daily order count. Coordinates must be latitude and longitude in decimal degrees.
+Invalid coordinates, blank names, non-positive order volumes, and duplicate names are excluded during validation. Provide at least two valid demand centres.
 
-## How the optimization works
+## Project structure
 
-1. GRIDPOINT begins with several well-spread warehouse candidates.
-2. Each neighbourhood is assigned to the nearest warehouse.
-3. Each warehouse moves toward the weighted geometric median of the neighbourhoods it serves. Higher-order neighbourhoods exert more pull.
-4. The app repeats this from several starting layouts and retains the lowest weighted delivery distance.
+| File | Purpose |
+| --- | --- |
+| `GRIDPOINT.py` | Streamlit application, visualizations, input handling, and user interface |
+| `optimizer.py` | Location optimization, assignment logic, distance calculations, and cost evaluation |
+| `briefing.py` | Decision briefing and operational-pulse helpers |
+| `sample_data.csv` | Illustrative Bengaluru demand dataset |
+| `requirements.txt` | Python dependencies |
+| `DEPLOYMENT_CHECKLIST.md` | Deployment preparation checklist |
 
-The app uses Haversine (great-circle) distance. This is an excellent fast planning estimate, but real rollouts should incorporate roads, traffic, delivery time, property availability, and operating costs.
+## Technology
 
-## Demo script
+- Python
+- Streamlit
+- Pandas and NumPy
+- PyDeck
+- Plotly
 
-1. Open the Bengaluru demo data and show the demand bubbles.
-2. Set three warehouses and select **Find best locations**.
-3. Compare the maps and daily cost figures.
-4. Enable a tight service radius or capacity to demonstrate real-world constraints and the coverage warning.
-5. Open **Operations pulse** to identify capacity, coverage, and delivery-risk checks before a real site decision.
-6. Open the trade-off tab and explain why the cheapest delivery plan may not be the cheapest total operating plan.
+## Data and modelling considerations
 
-## Technology and AI disclosure
+The included Bengaluru dataset is illustrative and intended for demonstration. Before using GRIDPOINT for a real operating decision, replace it with verified demand data and assess factors outside this prototype, including:
 
-- Python, Streamlit, Pandas, NumPy, and PyDeck
-- The mathematical approach is a weighted k-median clustering method using demand-weighted k-means++ initialization and Weiszfeld updates for geometric medians.
-- An AI coding assistant was used to help draft and explain code. The team is responsible for understanding, testing, integrating, and presenting the work.
+- road-network travel distance and travel time
+- time-of-day traffic and delivery windows
+- property availability, rent, and fit-out cost
+- warehouse capacity, labour, and fleet availability
+- service-level commitments and delivery-zone constraints
+- demand seasonality and projected growth
 
-## Credits & Data Sources
+## Team
 
-- **Pratik Singh** — Project lead: concept development, application integration, optimization workflow, deployment, documentation, and final presentation.
-- **Bicky Jaiswal** — Development and research support: testing scenarios, reviewing outputs, and assisting with implementation and presentation preparation.
-- **Sachin Sah** — Research and validation support: domain research, feedback, documentation, presentation creation and final review.
-- **Sameer Ray** — Team contributor: ideation, project feedback, and final review.
-  
-### Data source
+- **Pratik Singh** — Project lead: concept development, application integration, optimization workflow, deployment, documentation, and final presentation
+- **Bicky Jaiswal** — Development and research support: testing scenarios, output review, implementation support, and presentation preparation
+- **Sachin Sah** — Research and validation support: domain research, documentation, presentation creation, and final review
+- **Sameer Ray** — Ideation, project feedback, and final review
 
-The Bengaluru demo dataset used in this prototype is included in `sample_data.csv` in this repository. It contains representative Bengaluru neighbourhood names, approximate latitude and longitude coordinates, and illustrative daily-order volumes created for scenario planning and demonstration purposes. The data is not presented as live operational data; a production deployment would use verified order history, road-network travel times, traffic conditions, property availability, and facility-cost data from relevant business and public sources.
+## Acknowledgement
+
+An AI coding assistant was used to help draft and explain portions of the code. The project team remains responsible for understanding, testing, integrating, and presenting the work.
